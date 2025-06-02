@@ -5,16 +5,15 @@ import { BrowserRouter as Router, Route, Routes, Navigate} from 'react-router-do
 import Home from './Components/LoginSignup/Home'; 
 
 function App() {
-  const isLoggedIn=JSON.parse(localStorage.getItem("keepLoggedIn"));
+  const isLoggedIn=localStorage.getItem("authToken");
   return (
       <Router>
       <Routes>
         <Route path='/' element={isLoggedIn?<Navigate to={'/Home'}/>:<LoginSignUp />} />
-        <Route path='/' element={<LoginSignUp/>} />
         <Route path='/Home' element={<Home/>} />
       </Routes>
     </Router>
-  );
+  );  
 }
 
 export default App;

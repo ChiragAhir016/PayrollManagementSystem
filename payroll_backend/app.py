@@ -7,6 +7,8 @@ import psycopg2
 import redis
 from config import ApplicationConfig
 from models import User
+import jwt
+from datetime import datetime, timedelta
 
 
 app = Flask(__name__)
@@ -14,6 +16,17 @@ cors = CORS(app,supports_credentials=False)
 app.config.from_object(ApplicationConfig)
 bcrypt = Bcrypt(app)
 server_session = Session(app)
+
+def generate_token(user_id):
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.utcnow() + timedelta(minutes=30) # Token expires in 30 mins
+    }
+    # token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+    token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+
+    return token
+
 
 
 # Connect to the database
@@ -54,7 +67,7 @@ def get_current_user():
     cur.execute(
         f'''SELECT * FROM users where email_id = '{email}' '''
     )
-    
+
     user_exists = cur.fetchall()
     
     conn.commit()
@@ -121,16 +134,53 @@ def login_user():
     
     valid_credentials = cur.fetchall()
     
-    
     if valid_credentials:
-        return {"value":"You Logged In", "name":valid_credentials[0][1], "email":valid_credentials[0][2]}, 200 
-    
-    else:
+        token = generate_token(email)
+        cur.execute(
+            f'''update users set token = '{token}' Where email_id = '{email}' and password = '{password}' '''
+        )
         conn.commit()
         cur.close()
         conn.close()
+        return {"token" : token}, 200 
+    else:
         return {"value":"Invalid Credentials"}, 401
+
+
+
+@app.route("/get_user", methods=["POST"])
+def get_user_detail():
+    email = request.json["email"]
+    token = request.json["token"]
+
+    conn = psycopg2.connect(database="Employeee_Project", user="postgres",
+                    password="root", host="localhost", port="5432")
+        
+
+
+# create a cursor
+    cur = conn.cursor()
+
     
+    cur.execute(
+        f'''SELECT * FROM users Where email_id = '{email}' and token = '{token}' '''
+    )
+    print(email, token)
+    valid_credentials = cur.fetchall()
+    print(valid_credentials)
+    
+    name = valid_credentials[0][1]
+    email = valid_credentials[0][2]
+    id = valid_credentials[0][0]
+    
+    if len(valid_credentials) > 0:
+        conn.commit()
+        cur.close()
+        conn.close()
+        return {"name" : name, "email" : email, "id" : id}, 200 
+    else:
+        return {"value":"Invalid Credentials"}, 401
+
  
 
 

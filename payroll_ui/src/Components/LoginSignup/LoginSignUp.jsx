@@ -13,9 +13,10 @@ const LoginSignUp = () => {
 
   const [action,setAction] = useState("Sign Up");
   const [name, setName] =useState("");
-  const [email, setEmail] =useState("");
-  const [password, setPassword] =useState("");
+  const [email, setEmail] =useState("bob@gmail.com");
+  const [password, setPassword] =useState("123");
   const navigate = useNavigate(); 
+
 
   const handleNameChange = (event) => {
     setName(event.target.value);
@@ -90,14 +91,13 @@ const LoginSignUp = () => {
 
             if (response.ok) {
               const result = await response.json();
-              console.log(result)
+              console.log(result) 
               alert('You Logged in Successfully');
-               localStorage.setItem('name', result.name);
-               localStorage.setItem('email', result.email);
-              const token = response.token;
-              localStorage.setItem("authToken",token);
-              localStorage.setItem("keepLoggedIn",JSON.stringify(true));
-              navigate('/Home')
+              
+              localStorage.setItem('email', email);
+              localStorage.setItem("authToken",result.token);
+              
+              navigate('/Home');
 
 
             } else {
